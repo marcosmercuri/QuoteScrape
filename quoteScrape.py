@@ -1,37 +1,27 @@
 #Quote Scrape - Python3
 #12th MArch 2017
-from lxml import html
-import requests
 import json
-import sys
-import argparse
+import urllib
+
+import requests
+from bs4 import BeautifulSoup
+from lxml import html
 
 print("+++ Quote Scrape +++ ")
 
-URLS_JSON = "urls.json"
+URL_TOP_250 = 'http://www.imdb.com/chart/top'
 OUTPUT_PATH = "quotes.json"
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--url", help="The URL you wish to check")
-parser.add_argument("--searchName", help="Optional, names to return quotes for")
-args = parser.parse_args()
-
-urlArg = args.url
-searchName = ''
-if args.searchName:
-     searchName = args.searchName
 
 quotesDictList = []
 
-def buildQuoteDict(filmName, quote):
+def buildQuoteDict(filmName, quotes):
     quoteDict = {}
-    quoteDict['Film']=filmName
-    quoteDict['Quote']=quote[1].replace('\n','').replace(':','')
+    quoteDict['Film'] = filmName
+    quoteDict['Quotes'] = quotes
 
     return quoteDict
 
 def outputToFile(quotesDictList):
-    json_data = json.dumps(quotesDictList)
     quoteFile = open(OUTPUT_PATH, 'w')
     json.dump(quotesDictList, quoteFile)
     quoteFile.close()
@@ -41,28 +31,35 @@ def getQuotesFrom(url):
     page = requests.get(url)
     tree = html.fromstring(page.content)
 
-    filmName = tree.xpath('//*[@id="main"]/div[1]/div[1]/div/h3/a/text()')[0]
-    quotesList = tree.xpath('//*[@id="quotes_content"]/div[2]/div/div[@class="sodatext"]/p')
+    filmName = tree.xpath('//*[@property="og:title"]/@content')[0]
+    quotesList = tree.xpath('//*[@id="quotes_content"]/div[2]/div/div[@class="sodatext"]')
 
-    for q in quotesList:
-        name = q.xpath('a/span/text()')
-        quote  = q.xpath('text()')
+    formatted_quotes = []
 
-        if args.searchName:
-            if searchName in name:
-                quotesDictList.append(buildQuoteDict(filmName, quote))
-        else:
-            quotesDictList.append(buildQuoteDict(filmName, quote))
+    for quote in quotesList:
+        formatted_quote_line = ''
+        for quote_line in quote:
+            formatted_quote_line += quote_line.text_content().strip().replace('\n', '') + '\n'
+        formatted_quotes.append(formatted_quote_line.strip())
 
-if args.url:
-    getQuotesFrom(urlArg)
-else:
-    urls=open(URLS_JSON).read()
-    urlList = json.loads(urls)
+    quotesDictList.append(buildQuoteDict(filmName, formatted_quotes))
 
-    for aURL in urlList:
-        getQuotesFrom(aURL)
 
+def get_movie_quotes_url(movie_id):
+    return "http://www.imdb.com/title/" + movie_id + "/trivia?tab=qt&ref_=tt_trv_qu"
+
+def retrieveMovieList(url):
+    response = urllib.request.urlopen(url)
+    html = response.read()
+    soup = BeautifulSoup(html)
+
+    movieList = soup.findAll("div", {"class": "seen-widget"})
+
+    for movie in movieList:
+        getQuotesFrom(get_movie_quotes_url(movie['data-titleid']))
+
+
+retrieveMovieList(URL_TOP_250)
 
 outputToFile(quotesDictList)
 
