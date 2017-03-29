@@ -1,10 +1,12 @@
 # QuoteScrape
-A Simple Python script that scrapes a given IMDB 'Quotes' page and returns a JSON
-list of objects containing the film name and quote.
+A Simple and hideous Python script that scrapes the TOP 250 movies from IMDB and then it scrapes
+the 'Quotes' page of each movie and generates a JSON with a list of movies with its quotes.
 
 ##Usage
 
-python3 quoteScrape.py "URL" ["Search Name"]
+python3 quoteScrape.py
 
-URL = the url of the IMDB Quotes page to scrapes
-Search Name = the name of the character to return quotes for (optional)
+##Dependencies
+You need to have installed the following libraries:
+* BeautifulSoup
+* lxml

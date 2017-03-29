@@ -1,5 +1,4 @@
 #Quote Scrape - Python3
-#12th MArch 2017
 import json
 import urllib
 
