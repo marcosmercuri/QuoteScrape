@@ -1,4 +1,4 @@
-#Quote Scrape - Python3
+# Quote Scrape - Python3
 import json
 import urllib
 
@@ -13,53 +13,55 @@ OUTPUT_PATH = "quotes.json"
 
 quotesDictList = []
 
-def buildQuoteDict(filmName, quotes):
-    quoteDict = {}
-    quoteDict['Film'] = filmName
-    quoteDict['Quotes'] = quotes
 
-    return quoteDict
+def build_quote_dict(film_name, quotes):
+    quote_dict = {'Film': film_name, 'Quotes': quotes}
 
-def outputToFile(quotesDictList):
-    quoteFile = open(OUTPUT_PATH, 'w')
-    json.dump(quotesDictList, quoteFile)
-    quoteFile.close()
+    return quote_dict
 
-def getQuotesFrom(url):
+
+def output_to_file(quotes_dict_list):
+    quote_file = open(OUTPUT_PATH, 'w')
+    json.dump(quotes_dict_list, quote_file)
+    quote_file.close()
+
+
+def get_quotes_from(url):
     print("Getting Quotes")
     page = requests.get(url)
     tree = html.fromstring(page.content)
 
-    filmName = tree.xpath('//*[@property="og:title"]/@content')[0]
-    quotesList = tree.xpath('//*[@id="quotes_content"]/div[2]/div/div[@class="sodatext"]')
+    film_name = tree.xpath('//*[@property="og:title"]/@content')[0]
+    quotes_list = tree.xpath('//*[@id="quotes_content"]/div[2]/div/div[@class="sodatext"]')
 
     formatted_quotes = []
 
-    for quote in quotesList:
+    for quote in quotes_list:
         formatted_quote_line = ''
         for quote_line in quote:
             formatted_quote_line += quote_line.text_content().strip().replace('\n', '') + '\n'
         formatted_quotes.append(formatted_quote_line.strip())
 
-    quotesDictList.append(buildQuoteDict(filmName, formatted_quotes))
+    quotesDictList.append(build_quote_dict(film_name, formatted_quotes))
 
 
 def get_movie_quotes_url(movie_id):
     return "http://www.imdb.com/title/" + movie_id + "/trivia?tab=qt&ref_=tt_trv_qu"
 
-def retrieveMovieList(url):
+
+def retrieve_movie_list(url):
     response = urllib.request.urlopen(url)
-    html = response.read()
-    soup = BeautifulSoup(html)
+    html_full_page = response.read()
+    soup = BeautifulSoup(html_full_page)
 
-    movieList = soup.findAll("div", {"class": "seen-widget"})
+    movie_list = soup.findAll("div", {"class": "seen-widget"})
 
-    for movie in movieList:
-        getQuotesFrom(get_movie_quotes_url(movie['data-titleid']))
+    for movie in movie_list:
+        get_quotes_from(get_movie_quotes_url(movie['data-titleid']))
 
 
-retrieveMovieList(URL_TOP_250)
+retrieve_movie_list(URL_TOP_250)
 
-outputToFile(quotesDictList)
+output_to_file(quotesDictList)
 
 print("+++ Done +++")
